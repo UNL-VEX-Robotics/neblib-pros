@@ -57,13 +57,13 @@ enum class MotorEncoderUnits {
 using MotorUnits = MotorEncoderUnits;
 
 enum class MotorGears {
-	ratio_36_to_1 = 0, ///< 36:1, 100 RPM, Red gear set
+	ratio_36_to_1 = 1, ///< 36:1, 100 RPM, Red gear set
 	red = ratio_36_to_1, ///< 36:1, 100 RPM, Red gear set
 	rpm_100 = ratio_36_to_1, ///< 36:1, 100 RPM, Red gear set
-	ratio_18_to_1 = 1, ///< 18:1, 200 RPM, Green gear set
+	ratio_18_to_1 = 2, ///< 18:1, 200 RPM, Green gear set
 	green = ratio_18_to_1, ///< 18:1, 200 RPM, Green gear set
 	rpm_200 = ratio_18_to_1, ///< 18:1, 200 RPM, Green gear set
-	ratio_6_to_1 = 2, ///< 6:1, 600 RPM, Blue gear set
+	ratio_6_to_1 = 6, ///< 6:1, 600 RPM, Blue gear set
 	blue = ratio_6_to_1, ///< 6:1, 600 RPM, Blue gear set
 	rpm_600 = ratio_6_to_1, ///< 6:1, 600 RPM, Blue gear set
 	invalid = INT32_MAX ///< Error return code
