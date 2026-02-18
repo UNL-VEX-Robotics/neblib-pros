@@ -16,5 +16,13 @@ namespace neblib
         return (T(0) < num) - (num < T(0));
     }
 
+    /// @brief Wraps a value within a specified range.
+    ///
+    /// The function takes a number, a minimun, and a maximum.
+    ///
+    /// @param num The input number
+    /// @param min The minimum acceptable value
+    /// @param max The maximum acceptable value
+    /// @return A value between min and max
     double wrap(double num, const double min, const double max);
 }
