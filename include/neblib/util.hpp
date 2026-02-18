@@ -15,4 +15,6 @@ namespace neblib
     {
         return (T(0) < num) - (num < T(0));
     }
+
+    double wrap(double num, const double min, const double max);
 }
