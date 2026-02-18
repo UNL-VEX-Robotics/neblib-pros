@@ -45,33 +45,29 @@ void neblib::StandardDrive::tankDrive(
     const int rightInput,
     const neblib::VelocityUnits unit)
 {
+    pros::MotorGears leftGearset = leftMotors->get_gearing();
+    pros::MotorGears rightGearset = rightMotors->get_gearing();
+
     switch (unit)
     {
     case percent:
-        pros::MotorGears leftGearset = leftMotors->get_gearing();
-        pros::MotorGears rightGearset = rightMotors->get_gearing();
         if (leftGearset == pros::MotorGears::invalid || rightGearset == pros::MotorGears::invalid)
             return;
 
         leftMotors->move_velocity(leftInput * static_cast<int>(leftGearset));
         rightMotors->move_velocity(rightInput * static_cast<int>(rightGearset));
         break;
-
     case rpm:
-        pros::MotorGears leftGearset = leftMotors->get_gearing();
-        pros::MotorGears rightGearset = rightMotors->get_gearing();
         if (leftGearset == pros::MotorGears::invalid || rightGearset == pros::MotorGears::invalid)
             return;
 
         leftMotors->move_velocity(leftInput);
         rightMotors->move_velocity(rightInput);
         break;
-
     case volt:
         leftMotors->move(leftInput);
         rightMotors->move(rightInput);
         break;
-
     case millivolt:
         leftMotors->move_voltage(leftInput);
         rightMotors->move_voltage(rightInput);
@@ -98,7 +94,11 @@ void neblib::StandardDrive::stop(pros::MotorBrake brakeType)
     rightMotors->brake();
 }
 
-int neblib::StandardDrive::driveFor(const double distance, const double heading, const std::array<double, 2> clamp)
+int neblib::StandardDrive::driveFor(
+    const double distance,
+    const int timeout,
+    const double heading,
+    const std::array<double, 2> clamp)
 {
     if (!linearController || !angularController)
         return -1;
@@ -108,7 +108,7 @@ int neblib::StandardDrive::driveFor(const double distance, const double heading,
     const double targetPosition = parallelTrackerWheel.getPosition() + distance;
 
     int t = 0;
-    while (!linearController->isSettled())
+    while (!linearController->isSettled() && t < timeout)
     {
         const int linearOutput = static_cast<int>(linearController->getOutput(targetPosition - parallelTrackerWheel.getPosition(), clamp));
         const int angularOutput = static_cast<int>(angularController->getOutput(neblib::wrap(heading - imu.get_heading(), -180.0, 180.0), clamp));
@@ -126,7 +126,10 @@ int neblib::StandardDrive::driveFor(const double distance, const double heading,
     return t;
 }
 
-int neblib::StandardDrive::driveFor(const double distance, const std::array<double, 2> clamp)
+int neblib::StandardDrive::driveFor(
+    const double distance,
+    const int timeout,
+    const std::array<double, 2> clamp)
 {
-    return this->driveFor(distance, imu.get_heading(), clamp);
+    return this->driveFor(distance, timeout, imu.get_heading(), clamp);
 }

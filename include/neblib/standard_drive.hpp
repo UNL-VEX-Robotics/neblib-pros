@@ -109,6 +109,7 @@ namespace neblib
         /// Units of the distance are based on the units of the tracking wheel.
         ///
         /// @param distance The distance to be driven
+        /// @param timeout The amount of time before the move is forced to end, mS
         /// @param heading The heading the robot will try to maintain
         /// @param clamp Optional array specifying the minimum and maximum output values.
         ///              Defaults to {-∞, ∞}, meaning no clamping.
@@ -116,6 +117,7 @@ namespace neblib
         ///         Returns -1 if there is no specified control algorithm
         int driveFor(
             const double distance,
+            const int timeout,
             const double heading,
             const std::array<double, 2> clamp = {
                 -std::numeric_limits<double>::infinity(),
@@ -129,14 +131,17 @@ namespace neblib
         /// Holds the current heading of the robot.
         ///
         /// @param distance The distance to be driven
+        /// @param timeout The amount of time before the move is forced to end, mS
         /// @param clamp Optional array specifying the minimum and maximum output values.
         ///              Defaults to {-∞, ∞}, meaning no clamping.
         /// @return The amount of time the movement took, mS.
         ///         Returns -1 if there is no specified control algorithm
         int driveFor(
             const double distance,
+            const int timeout,
             const std::array<double, 2> clamp = {
                 -std::numeric_limits<double>::infinity(),
                 std::numeric_limits<double>::infinity()});
+
     };
 }
