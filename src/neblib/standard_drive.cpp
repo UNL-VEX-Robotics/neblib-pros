@@ -3,8 +3,8 @@
 neblib::StandardDrive::StandardDrive(
     std::unique_ptr<pros::MotorGroup> leftMotors,
     std::unique_ptr<pros::MotorGroup> rightMotors,
-    pros::Imu &imu,
-    neblib::TrackerWheel &parallelTrackerWheel)
+    pros::Imu *imu,
+    neblib::TrackerWheel *parallelTrackerWheel)
     : leftMotors(std::move(leftMotors)),
       rightMotors(std::move(rightMotors)),
       imu(imu),
@@ -100,18 +100,18 @@ int neblib::StandardDrive::driveFor(
     const double heading,
     const std::array<double, 2> clamp)
 {
-    if (!linearController || !angularController)
+    if (!linearController || !angularController || !imu || !parallelTrackerWheel)
         return -1;
 
     linearController->reset();
+    angularController->reset();
 
-    const double targetPosition = parallelTrackerWheel.getPosition() + distance;
-
+    const double targetPosition = parallelTrackerWheel->getPosition() + distance;
     int t = 0;
     while (!linearController->isSettled() && t < timeout)
     {
-        const int linearOutput = static_cast<int>(linearController->getOutput(targetPosition - parallelTrackerWheel.getPosition(), clamp));
-        const int angularOutput = static_cast<int>(angularController->getOutput(neblib::wrap(heading - imu.get_heading(), -180.0, 180.0), clamp));
+        const int linearOutput = static_cast<int>(linearController->getOutput(targetPosition - parallelTrackerWheel->getPosition(), clamp));
+        const int angularOutput = static_cast<int>(angularController->getOutput(neblib::wrap(heading - imu->get_heading(), -180.0, 180.0), clamp));
 
         this->arcadeDrive(
             linearOutput,
@@ -131,5 +131,141 @@ int neblib::StandardDrive::driveFor(
     const int timeout,
     const std::array<double, 2> clamp)
 {
-    return this->driveFor(distance, timeout, imu.get_heading(), clamp);
+    return this->driveFor(distance, timeout, imu->get_heading(), clamp);
+}
+
+int neblib::StandardDrive::turnFor(const double degrees, const int timeout, const std::array<double, 2> clamp)
+{
+    if (!angularController || !imu)
+        return -1;
+
+    angularController->reset();
+
+    const double target = imu->get_rotation() + degrees;
+    int t = 0;
+    while (!angularController->isSettled() && t < timeout)
+    {
+        const int output = static_cast<int>(angularController->getOutput(target - imu->get_rotation(), clamp));
+
+        this->arcadeDrive(
+            0.0,
+            output,
+            neblib::millivolt);
+
+        pros::delay(10);
+        t += 10;
+    }
+
+    this->stop(pros::MotorBrake::hold);
+    return t;
+}
+
+int neblib::StandardDrive::turnTo(const double heading, const int timeout, const std::array<double, 2> clamp)
+{
+    if (!angularController || !imu)
+        return -1;
+
+    angularController->reset();
+
+    int t = 0;
+    while (!angularController->isSettled() && t < timeout)
+    {
+        const int output = static_cast<int>(angularController->getOutput(neblib::wrap(heading - imu->get_heading(), -180.0, 180.0), clamp));
+
+        this->arcadeDrive(
+            0.0,
+            output,
+            neblib::millivolt);
+
+        pros::delay(10);
+        t += 10;
+    }
+
+    this->stop(pros::MotorBrake::hold);
+    return t;
+}
+
+int neblib::StandardDrive::swingFor(const neblib::TurnDirection direction, const double degrees, const int timeout, const std::array<double, 2> clamp)
+{
+    if (!angularController || !imu)
+        return -1;
+
+    angularController->reset();
+
+    const double target = (direction == neblib::TurnDirection::right ? imu->get_rotation() + degrees : imu->get_rotation() - degrees);
+    int t = 0;
+
+    if (direction == neblib::TurnDirection::right)
+    {
+        while (!angularController->isSettled())
+        {
+            const int output = static_cast<int>(angularController->getOutput(target - imu->get_rotation(), clamp));
+
+            rightMotors->set_brake_mode_all(pros::MotorBrake::hold);
+            rightMotors->brake();
+            leftMotors->move_voltage(output);
+
+            pros::delay(10);
+            t += 10;
+        }
+    }
+    else
+    {
+        while (!angularController->isSettled())
+        {
+            const int output = static_cast<int>(angularController->getOutput(imu->get_rotation() - target, clamp));
+
+            leftMotors->set_brake_mode_all(pros::MotorBrake::hold);
+            leftMotors->brake();
+            rightMotors->move_voltage(output);
+
+            pros::delay(10);
+            t += 10;
+        }
+    }
+
+    this->stop(pros::MotorBrake::hold);
+    return t;
+}
+
+int neblib::StandardDrive::swingTo(const neblib::TurnDirection direction, const double heading, const int timeout, const std::array<double, 2> clamp)
+{
+    if (!angularController || !imu)
+        return -1;
+
+    angularController->reset();
+
+    int t = 0;
+
+    if (direction == neblib::TurnDirection::right)
+    {
+        while (!angularController->isSettled())
+        {
+            const int output = static_cast<int>(angularController->getOutput(neblib::wrap(heading - imu->get_heading(), -180.0, 180.0), clamp));
+
+            rightMotors->set_brake_mode_all(pros::MotorBrake::hold);
+            rightMotors->brake();
+            leftMotors->move_voltage(output);
+
+            pros::delay(10);
+            t += 10;
+        }
+    }
+    else
+    {
+        while (!angularController->isSettled())
+        {
+            const int output = static_cast<int>(angularController->getOutput(neblib::wrap(imu->get_heading() - heading, -180.0, 180.0), clamp));
+
+            leftMotors->set_brake_mode_all(pros::MotorBrake::hold);
+            leftMotors->brake();
+            rightMotors->move_voltage(output);
+
+            pros::delay(10);
+            t += 10;
+        }
+    }
+
+    this->stop(pros::MotorBrake::hold);
+    return t;
 }
