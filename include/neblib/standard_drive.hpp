@@ -13,8 +13,8 @@ namespace neblib
         std::unique_ptr<pros::MotorGroup> leftMotors;
         std::unique_ptr<pros::MotorGroup> rightMotors;
 
-        pros::Imu &imu;
-        neblib::TrackerWheel &parallelTrackerWheel;
+        pros::Imu *imu;
+        neblib::TrackerWheel *parallelTrackerWheel;
 
         std::unique_ptr<neblib::BaseController> linearController;
         std::unique_ptr<neblib::BaseController> angularController;
@@ -32,8 +32,8 @@ namespace neblib
         StandardDrive(
             std::unique_ptr<pros::MotorGroup> leftMotors,
             std::unique_ptr<pros::MotorGroup> rightMotors,
-            pros::Imu &imu,
-            neblib::TrackerWheel &parallelTrackerWheel);
+            pros::Imu *imu,
+            neblib::TrackerWheel *parallelTrackerWheel);
 
         /// @brief Sets the control algorithms used for autonomous movements.
         ///
@@ -106,6 +106,7 @@ namespace neblib
         ///
         /// The function takes a distance and heading, and optionally a clamp for min and max output.
         /// Relies on both linearController and angularController.
+        /// Relies on a tracking wheel and imu.
         /// Units of the distance are based on the units of the tracking wheel.
         ///
         /// @param distance The distance to be driven
@@ -127,6 +128,7 @@ namespace neblib
         ///
         /// The function takes a distance and optionally a clamp for min and max output.
         /// Relies on both linearController and angularController.
+        /// Relies on a tracking wheel and imu.
         /// Units of the distance are based on the units of the tracking wheel.
         /// Holds the current heading of the robot.
         ///
@@ -143,5 +145,81 @@ namespace neblib
                 -std::numeric_limits<double>::infinity(),
                 std::numeric_limits<double>::infinity()});
 
+        /// @brief Autonomously turns a specified number of degrees.
+        ///
+        /// The function takes a number of degrees, a timeout, and optionally a clamp for min and max output.
+        /// Relies on angularContoller and an imu.
+        ///
+        /// @param degrees The amount of degrees to turn, negative is left
+        /// @param timeout The amount of time before the move is forced to end, mS
+        /// @param clamp Optional array specifying the minimum and maximum output values.
+        ///              Defaults to {-∞, ∞}, meaning no clamping.
+        /// @return The amount of time the movement took, mS.
+        ///         Returns -1 if there is no control algorithm or imu.
+        int turnFor(
+            const double degrees,
+            const int timeout,
+            const std::array<double, 2> clamp = {
+                -std::numeric_limits<double>::infinity(),
+                std::numeric_limits<double>::infinity()});
+
+        /// @brief Autonomously turns to a specified heading.
+        ///
+        /// The function takes a heading, a timeout, and optionally a clamp for min and max output.
+        /// Relies on angularController and an imu.
+        /// 
+        /// @param heading The target heading
+        /// @param timeout The amount of time before the move is forced to end, mS
+        /// @param clamp Optional array specifying the minimum and maximum output values.
+        ///              Defaults to {-∞, ∞}, meaning no clamping.
+        /// @return The amount of time the movement took, mS.
+        ///         Returns -1 if there is no control algorithm or imu.
+        int turnTo(
+            const double heading,
+            const int timeout,
+            const std::array<double, 2> clamp = {
+                -std::numeric_limits<double>::infinity(),
+                std::numeric_limits<double>::infinity()});
+
+        /// @brief Autonomously swings a specified number of degrees.
+        ///
+        /// A swing is equivalent to an arc with a radius of half the robot's trackwidth.
+        /// Forward is positive, backwards is negative.
+        /// Relies on angularController and an imu.
+        ///
+        /// @param direction Left or right
+        /// @param degrees The amount of degrees to turn.
+        /// @param timeout The amount of time before the move is forced to end, mS
+        /// @param clamp Optional array specifying the minimum and maximum output values.
+        ///              Defaults to {-∞, ∞}, meaning no clamping.
+        /// @return The amount of time the movement took, mS.
+        ///         Returns -1 if there is no control algorithm or imu.
+        int swingFor(
+            const neblib::TurnDirection direction,
+            const double degrees,
+            const int timeout,
+            const std::array<double, 2> clamp = {
+                -std::numeric_limits<double>::infinity(),
+                std::numeric_limits<double>::infinity()});
+        
+        /// @brief Autonomously swings to a specified heading.
+        ///
+        /// A swing is equivalent to an arc with a radius of half the robot's trackwidth.
+        /// Relies on angularController and an imu.
+        ///
+        /// @param direction Left or right
+        /// @param heading The target heading
+        /// @param timeout The amount of time before the move is forced to end, mS
+        /// @param clamp Optional array specifying the minimum and maximum output values.
+        ///              Defaults to {-∞, ∞}, meaning no clamping.
+        /// @return The amount of time the movement took, mS.
+        ///         Returns -1 if there is no control algorithm or imu.
+        int swingTo(
+            const neblib::TurnDirection direction,
+            const double heading,
+            const int timeout,
+            const std::array<double, 2> clamp = {
+                -std::numeric_limits<double>::infinity(),
+                std::numeric_limits<double>::infinity()});
     };
 }
